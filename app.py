@@ -119,31 +119,31 @@ def main():
                 st.error("Please provide a folder name and select files to upload.")
             else:
                 output_folder_path = os.path.join(output_folder, folder_name)
-                if os.path.exists(output_folder_path):
-                    st.warning(f"A folder named '{folder_name}' already exists.")
-                    if st.button("Delete existing folder and proceed"):
-                        shutil.rmtree(output_folder_path)
-                        folder_path = save_files(files, folder_name)
-                        st.success(f"Files saved to {folder_path}")
-                        vector_db_path = process_folder(folder_path)
-                        clear_folder(folder_path)
-                        st.success(f"Vector DB created at {vector_db_path} and upload folder cleared")
-                        reset_question_and_chunks()
-                        st.session_state['folder_name'] = ""
-                        st.session_state['uploader_key'] += 1
-                        st.rerun()
-                    elif st.button("Cancel"):
-                        st.stop()
-                else:
-                    folder_path = save_files(files, folder_name)
-                    st.success(f"Files saved to {folder_path}")
-                    vector_db_path = process_folder(folder_path)
-                    clear_folder(folder_path)
-                    st.success(f"Vector DB created at {vector_db_path} and upload folder cleared")
-                    reset_question_and_chunks()
-                    st.session_state['folder_name'] = ""
-                    st.session_state['uploader_key'] += 1
-                    st.rerun()
+                # if os.path.exists(output_folder_path):
+                #     st.warning(f"A folder named '{folder_name}' already exists.")
+                #     if st.button("Delete existing folder and proceed"):
+                #         shutil.rmtree(output_folder_path)
+                #         folder_path = save_files(files, folder_name)
+                #         st.success(f"Files saved to {folder_path}")
+                #         vector_db_path = process_folder(folder_path)
+                #         clear_folder(folder_path)
+                #         st.success(f"Vector DB created at {vector_db_path} and upload folder cleared")
+                #         reset_question_and_chunks()
+                #         st.session_state['folder_name'] = ""
+                #         st.session_state['uploader_key'] += 1
+                #         st.rerun()
+                #     elif st.button("Cancel"):
+                #         st.stop()
+                # else:
+                folder_path = save_files(files, folder_name)
+                st.success(f"Files saved to {folder_path}")
+                vector_db_path = process_folder(folder_path)
+                clear_folder(folder_path)
+                st.success(f"Vector DB created at {vector_db_path} and upload folder cleared")
+                reset_question_and_chunks()
+                st.session_state['folder_name'] = ""
+                st.session_state['uploader_key'] += 1
+                st.rerun()
 
         st.markdown("---")
 
