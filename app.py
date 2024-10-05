@@ -154,7 +154,7 @@ def main():
         st.markdown("---")
 
         # Fetch and list models dynamically
-        models_list = client.list()
+        models_list = ollama.list()
         model_names = [model['name'] for model in models_list['models']]
         selected_model = st.selectbox("Select Model", model_names)
 
