@@ -9,6 +9,12 @@ from langchain_core.documents import Document
 # from ollama import Client
 import ollama
 import logging
+import fitz  # PyMuPDF for text and image extraction
+import pdfplumber  # For table extraction
+from PIL import Image, UnidentifiedImageError
+import io
+import csv
+import json
 
 # Initialize global variables
 embeddings = HuggingFaceEmbeddings(model_name='all-mpnet-base-v2')
