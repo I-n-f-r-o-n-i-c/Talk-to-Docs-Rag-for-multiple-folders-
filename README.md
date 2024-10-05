@@ -4,13 +4,13 @@ Talk to Docs 📑
 
 Here's how to use the app:
 
-Enter Groq API Key in sidebar.\n
-Input folder name, upload PDFs, click "Process Folder".\n
-Select processed folder from sidebar.\n
-Choose AI model from dropdown.\n
-Type question in main area, click "Submit".\n
-View AI answer and related document chunks.\n
-Manage folders using delete buttons or "Clear Output Folder".\n
+Enter Groq API Key in sidebar.
+Input folder name, upload PDFs, click "Process Folder".
+Select processed folder from sidebar.
+Choose AI model from dropdown.
+Type question in main area, click "Submit".
+View AI answer and related document chunks.
+Manage folders using delete buttons or "Clear Output Folder".
 
 
 You can switch between folders any time. and each folder can contain multiple documents.
