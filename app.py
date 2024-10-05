@@ -6,14 +6,14 @@ from document_chunker import DocumentChunker
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from ollama import Client
+# from ollama import Client
+import ollama
 import logging
 
 # Initialize global variables
-client = Client(host='http://35.244.5.146:11434')
 embeddings = HuggingFaceEmbeddings(model_name='all-mpnet-base-v2')
-output_folder = "C:/Users/singh/OneDrive/Desktop/Output"
-upload_folder = "C:/Users/singh/OneDrive/Desktop/Uploads"
+output_folder = "Output"
+upload_folder = "Uploads"
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -222,7 +222,7 @@ def main():
                         }
                         serialized_docs.append(serialized_doc)
 
-                    response = client.chat(
+                    response = ollama.chat(
                         model=selected_model,
                         messages=[{'role': 'user', 'content': f"Context: {docs} \n Question: {question} \n Answer: "}],
                         stream=False,
