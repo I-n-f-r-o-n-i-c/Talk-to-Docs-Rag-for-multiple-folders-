@@ -6,8 +6,9 @@ from document_chunker import DocumentChunker
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
 # from ollama import Client
-import ollama
 import logging
 import fitz  # PyMuPDF for text and image extraction
 import pdfplumber  # For table extraction
@@ -19,7 +20,11 @@ import json
 # Initialize global variables
 embeddings = HuggingFaceEmbeddings(model_name='all-mpnet-base-v2')
 output_folder = "Output"
+if not os.path.exists("Output"):
+        os.makedirs("Output")
 upload_folder = "Uploads"
+if not os.path.exists("Uploads"):
+        os.makedirs("Uploads")
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -102,6 +107,10 @@ def init_session_state():
         st.session_state['answer'] = ""
     if 'expanded_chunk' not in st.session_state:
         st.session_state['expanded_chunk'] = None
+    if 'GROQ_API_KEY' not in st.session_state:
+        st.session_state['GROQ_API_KEY'] = ""
+    if 'selected_model' not in st.session_state:
+        st.session_state['selected_model'] = ""
 
 def reset_question_and_chunks():
     st.session_state['question'] = ""
@@ -117,6 +126,11 @@ def main():
 
     # Sidebar
     with st.sidebar:
+        GROQ_API_KEY = st.text_input("Enter Groq API Key", type="password", value=st.session_state['GROQ_API_KEY'])
+        if GROQ_API_KEY:
+            st.session_state['GROQ_API_KEY'] = GROQ_API_KEY
+        else:
+            st.warning("Please enter a valid Groq API Key")
         folder_name = st.text_input("Enter Folder Name", value=st.session_state['folder_name'], key="folder_name_input")
         files = st.file_uploader("Upload PDF Files", accept_multiple_files=True, type=["pdf"], key=f"uploader_{st.session_state['uploader_key']}")
 
@@ -124,23 +138,6 @@ def main():
             if not folder_name or not files:
                 st.error("Please provide a folder name and select files to upload.")
             else:
-                output_folder_path = os.path.join(output_folder, folder_name)
-                # if os.path.exists(output_folder_path):
-                #     st.warning(f"A folder named '{folder_name}' already exists.")
-                #     if st.button("Delete existing folder and proceed"):
-                #         shutil.rmtree(output_folder_path)
-                #         folder_path = save_files(files, folder_name)
-                #         st.success(f"Files saved to {folder_path}")
-                #         vector_db_path = process_folder(folder_path)
-                #         clear_folder(folder_path)
-                #         st.success(f"Vector DB created at {vector_db_path} and upload folder cleared")
-                #         reset_question_and_chunks()
-                #         st.session_state['folder_name'] = ""
-                #         st.session_state['uploader_key'] += 1
-                #         st.rerun()
-                #     elif st.button("Cancel"):
-                #         st.stop()
-                # else:
                 folder_path = save_files(files, folder_name)
                 st.success(f"Files saved to {folder_path}")
                 vector_db_path = process_folder(folder_path)
@@ -154,9 +151,20 @@ def main():
         st.markdown("---")
 
         # Fetch and list models dynamically
-        models_list = ollama.list()
-        model_names = [model['name'] for model in models_list['models']]
-        selected_model = st.selectbox("Select Model", model_names)
+        models_list = [
+            "llama-3.1-70b-versatile",
+            "llama-3.1-8b-instant",
+            "llama-3.2-11b-text-preview",
+            "llama-3.2-11b-vision-preview",
+            "llama-3.2-1b-preview",
+            "llama-3.2-3b-preview",
+            "llama-3.2-90b-text-preview",
+            "llama-guard-3-8b",
+            "llama3-70b-8192",
+            "llama3-8b-8192",
+            "mixtral-8×7b-32768"
+        ]
+        selected_model = st.selectbox("Select Model", models_list)
 
         st.markdown("---")
 
@@ -228,17 +236,47 @@ def main():
                         }
                         serialized_docs.append(serialized_doc)
 
-                    response = ollama.chat(
-                        model=selected_model,
-                        messages=[{'role': 'user', 'content': f"Context: {docs} \n Question: {question} \n Answer: "}],
-                        stream=False,
+                    llm = ChatGroq(model=selected_model, api_key=st.session_state['GROQ_API_KEY'])
+
+                    prompt = ChatPromptTemplate.from_messages(
+                        [
+                            (
+                                "system",
+                                """You are an AI assistant with access to a large knowledge base. Your task is to provide accurate and helpful responses solely based on the retrieved information. Follow these guidelines:
+
+                                1. Analyze the user's question carefully.
+                                2. Review the retrieved information provided in the context.
+                                3. Formulate a response that directly addresses the user's query.
+                                4. If the retrieved information is insufficient, just say Not specified in the context.
+                                6. If you're unsure or the information is ambiguous, communicate this clearly to the user.
+                                7. Keep your answers precise and concise
+
+                                Remember, your primary goal is to assist the user with accurate and relevant information.""",
+                            ),
+                            ("human", "context:{context} \n question:{question}"),
+                        ]
                     )
-                    if not response['message']['content']:
+
+                    chain = prompt | llm
+                    answer = chain.invoke(
+                        {
+                            "context": docs,
+                            "question": question
+                        }
+                    )
+
+
+                    # response = ollama.chat(
+                    #     model=selected_model,
+                    #     messages=[{'role': 'user', 'content': f"Context: {docs} \n Question: {question} \n Answer: "}],
+                    #     stream=False,
+                    # )
+                    if not answer.content:
                         st.error("No response received from the AI model.")
                         st.session_state['answer_visible'] = False
                         st.session_state['serialized_docs'] = []
                     else:
-                        st.session_state['answer'] = response['message']['content']
+                        st.session_state['answer'] = answer.content
                         st.session_state['answer_visible'] = True
                         st.session_state['serialized_docs'] = serialized_docs
                         st.session_state['question'] = question
@@ -269,11 +307,6 @@ def main():
                                     st.session_state['expanded_chunk'] = None
             else:
                 st.write("No chunks to display.")
-
-            st.subheader("Logs")
-            for handler in logger.handlers:
-                if isinstance(handler, logging.FileHandler):
-                    logger.removeHandler(handler)
     else:
         st.write("No folder selected. Please select a folder from the sidebar.")
 
