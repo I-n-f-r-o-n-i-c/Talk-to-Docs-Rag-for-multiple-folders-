@@ -2,6 +2,8 @@ Talk to Docs 📑
 
 ![image](https://github.com/user-attachments/assets/1e3b694e-cb3b-49b9-b886-ae125768cd62)
 
+
+<a href="https://rag-folders-vvctarh3tjpbofckm6jhjq.streamlit.app/?"><Demo>
 Here's how to use the app:
 
 Enter Groq API Key in sidebar.
