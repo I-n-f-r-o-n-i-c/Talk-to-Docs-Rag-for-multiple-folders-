@@ -1,7 +1,6 @@
 Talk to Docs 📑
 
-![image](https://github.com/user-attachments/assets/1e3b694e-cb3b-49b9-b886-ae125768cd62)
-
+![image](![image](https://github.com/user-attachments/assets/a9013ff3-a379-4c14-8e1e-f177f781a9ae)
 
 <a href="https://rag-folders-vvctarh3tjpbofckm6jhjq.streamlit.app/?">Demo
 
