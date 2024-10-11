@@ -15,29 +15,6 @@ from PIL import Image
 import io
 import csv
 import json
-
-# ... (keep the rest of the imports and global variables)
-
-Enhanced RAG Streamlit Application
-
-import streamlit as st
-import os
-import shutil
-from pdf_extractor import PDFExtractor
-from document_chunker import DocumentChunker
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_core.documents import Document
-from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
-import logging
-import fitz
-import pdfplumber
-from PIL import Image
-import io
-import csv
-import json
-
 # ... (keep the rest of the imports and global variables)
 
 def init_session_state():
