@@ -2,7 +2,7 @@ Talk to Docs 📑
 
 ![image](https://github.com/user-attachments/assets/a9013ff3-a379-4c14-8e1e-f177f781a9ae)
 
-<a href="https://rag-folders-vvctarh3tjpbofckm6jhjq.streamlit.app/?">Demo
+<a href="https://dqh5zfmznrzl22c35oterm.streamlit.app/">Demo
 
 Here's how to use the app:
 
