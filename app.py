@@ -18,6 +18,56 @@ import json
 
 # ... (keep the rest of the imports and global variables)
 
+Enhanced RAG Streamlit Application
+
+import streamlit as st
+import os
+import shutil
+from pdf_extractor import PDFExtractor
+from document_chunker import DocumentChunker
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+import logging
+import fitz
+import pdfplumber
+from PIL import Image
+import io
+import csv
+import json
+
+# ... (keep the rest of the imports and global variables)
+
+def init_session_state():
+    if 'folder_name' not in st.session_state:
+        st.session_state['folder_name'] = ""
+    if 'selected_folder' not in st.session_state:
+        st.session_state['selected_folder'] = None
+    if 'answer_visible' not in st.session_state:
+        st.session_state['answer_visible'] = False
+    if 'serialized_docs' not in st.session_state:
+        st.session_state['serialized_docs'] = []
+    if 'uploader_key' not in st.session_state:
+        st.session_state['uploader_key'] = 0
+    if 'question' not in st.session_state:
+        st.session_state['question'] = ""
+    if 'answer' not in st.session_state:
+        st.session_state['answer'] = ""
+    if 'expanded_chunk' not in st.session_state:
+        st.session_state['expanded_chunk'] = None
+    if 'GROQ_API_KEY' not in st.session_state:
+        st.session_state['GROQ_API_KEY'] = ""
+    if 'selected_model' not in st.session_state:
+        st.session_state['selected_model'] = ""
+
+def main():
+    st.set_page_config(page_title="Talk to Docs", page_icon=":books:", layout="wide")
+    st.title("📚 Talk to Your Documents")
+
+    init_session_state(
+
 def main():
     st.set_page_config(page_title="Talk to Docs", page_icon=":books:", layout="wide")
     st.title("📚 Talk to Your Documents")
