@@ -119,7 +119,7 @@ def reset_question_and_chunks():
 
 def main():
     st.set_page_config(page_title="Talk to Docs", page_icon=":books:", layout="wide")
-    st.title("📚 Talk to Your Documents")
+    st.title("📚 Talk to Docs")
 
     init_session_state()
 
