@@ -15,7 +15,79 @@ from PIL import Image
 import io
 import csv
 import json
-# ... (keep the rest of the imports and global variables)
+
+# Initialize global variables
+embeddings = HuggingFaceEmbeddings(model_name='all-mpnet-base-v2')
+output_folder = "Output"
+if not os.path.exists("Output"):
+    os.makedirs("Output")
+upload_folder = "Uploads"
+if not os.path.exists("Uploads"):
+    os.makedirs("Uploads")
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def save_files(files, folder_name):
+    folder_path = os.path.join(upload_folder, folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    for file in files:
+        file_path = os.path.join(folder_path, file.name)
+        with open(file_path, 'wb') as f:
+            f.write(file.getbuffer())
+    return folder_path
+
+def process_folder(input_folder):
+    folder_basename = os.path.basename(input_folder)
+    output_folder_path = os.path.join(output_folder, folder_basename)
+    if not os.path.exists(output_folder_path):
+        os.makedirs(output_folder_path)
+
+    for pdf_file in os.listdir(input_folder):
+        if pdf_file.endswith(".pdf"):
+            pdf_path = os.path.join(input_folder, pdf_file)
+            pdf_basename = os.path.splitext(pdf_file)[0]
+            pdf_output_folder = os.path.join(output_folder_path, pdf_basename)
+            if not os.path.exists(pdf_output_folder):
+                os.makedirs(pdf_output_folder)
+            pdf_extractor = PDFExtractor(pdf_path, pdf_output_folder)
+            pdf_extractor.extract_all_data()
+
+    chunks_folder = os.path.join(output_folder_path, "Chunks")
+    if not os.path.exists(chunks_folder):
+        os.makedirs(chunks_folder)
+
+    chunked_text_all = []
+    for pdf_folder in os.listdir(output_folder_path):
+        pdf_folder_path = os.path.join(output_folder_path, pdf_folder)
+        if os.path.isdir(pdf_folder_path) and pdf_folder not in ["Chunks", "VectorDB"]:
+            document_chunker = DocumentChunker(pdf_folder_path, pdf_folder)
+            chunked_text = document_chunker.chunk_all_text(chunks_folder)
+            for chunk in chunked_text:
+                chunk["pdf_name"] = pdf_folder
+            chunked_text_all.extend(chunked_text)
+
+    documents = [
+        Document(page_content=chunk["text_chunk"], metadata={"page_number": chunk["page_number"], "chunk_index": chunk["chunk_index"], "pdf_name": chunk["pdf_name"]})
+        for chunk in chunked_text_all
+    ]
+
+    db = FAISS.from_documents(documents, embeddings)
+    vector_db_path = os.path.join(output_folder_path, "VectorDB")
+    if not os.path.exists(vector_db_path):
+        os.makedirs(vector_db_path)
+    db.save_local(vector_db_path)
+    return vector_db_path
+
+def clear_folder(folder_path):
+    if os.path.exists(folder_path):
+        shutil.rmtree(folder_path)
+
+def delete_specific_folder(folder_name):
+    folder_path = os.path.join(output_folder, folder_name)
+    clear_folder(folder_path)
 
 def init_session_state():
     if 'folder_name' not in st.session_state:
@@ -39,11 +111,11 @@ def init_session_state():
     if 'selected_model' not in st.session_state:
         st.session_state['selected_model'] = ""
 
-def main():
-    st.set_page_config(page_title="Talk to Docs", page_icon=":books:", layout="wide")
-    st.title("📚 Talk to Your Documents")
-
-    init_session_state(
+def reset_question_and_chunks():
+    st.session_state['question'] = ""
+    st.session_state['serialized_docs'] = []
+    st.session_state['answer_visible'] = False
+    st.session_state['answer'] = ""
 
 def main():
     st.set_page_config(page_title="Talk to Docs", page_icon=":books:", layout="wide")
