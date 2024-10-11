@@ -165,7 +165,6 @@ def main():
             "llama-guard-3-8b",
             "llama3-70b-8192",
             "llama3-8b-8192",
-            "mixtral-8×7b-32768"
         ]
         selected_model = st.selectbox("🧠 Select Model", models_list)
 
