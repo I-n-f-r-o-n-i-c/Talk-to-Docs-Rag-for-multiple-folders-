@@ -264,16 +264,20 @@ def main():
                 st.info(st.session_state['answer'])
 
         with col2:
-            st.markdown("## 📑 Retrieved Chunks")
-            
-            if st.session_state['serialized_docs'] and st.session_state['answer_visible']:
-                for i, doc in enumerate(st.session_state['serialized_docs']):
-                    with st.expander(f"📄 {doc['pdf_name']} | Page: {doc['page_number']} | Chunk: {doc['chunk_index']}"):
-                        st.markdown(f"**Content:** {doc['page_content'][:500]}...")
-                        st.progress(1 - doc['score'])  # Convert score to a progress bar
-                        st.markdown(f"**Relevance Score:** {1 - doc['score']:.2f}")
-            else:
-                st.info("No chunks to display. Ask a question to see relevant document sections.")
+        st.markdown("## 📑 Retrieved Chunks")
+        
+        if st.session_state['serialized_docs'] and st.session_state['answer_visible']:
+            for i, doc in enumerate(st.session_state['serialized_docs']):
+                with st.expander(f"📄 {doc['pdf_name']} | Page: {doc['page_number']} | Chunk: {doc['chunk_index']}"):
+                    st.markdown(f"**Content:** {doc['page_content'][:500]}...")
+                    
+                    # Calculate relevance score and ensure it's between 0 and 1
+                    relevance_score = max(0, min(1, 1 - doc['score']))
+                    
+                    st.progress(relevance_score)  # Use the adjusted relevance score
+                    st.markdown(f"**Relevance Score:** {relevance_score:.2f}")
+        else:
+            st.info("No chunks to display. Ask a question to see relevant document sections.")
     else:
         st.info("👈 No folder selected. Please select a folder from the sidebar or upload new documents.")
 
