@@ -1,6 +1,6 @@
 Talk to Docs 📑
 
-![image](https://github.com/user-attachments/assets/a9013ff3-a379-4c14-8e1e-f177f781a9ae)
+![image](https://github.com/user-attachments/assets/b309e01e-c225-4c4d-907d-3d2cc97a57cc)
 
 <a href="https://dqh5zfmznrzl22c35oterm.streamlit.app/">Demo
 
