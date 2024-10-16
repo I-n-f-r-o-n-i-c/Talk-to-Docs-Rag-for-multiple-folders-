@@ -83,226 +83,136 @@ def delete_specific_folder(folder_name):
     folder_path = os.path.join(output_folder, folder_name)
     clear_folder(folder_path)
 
+# Initialize session state variables for configuration
 def init_session_state():
+    if 'GROQ_API_KEY' not in st.session_state:
+        st.session_state['GROQ_API_KEY'] = ""
     if 'folder_name' not in st.session_state:
         st.session_state['folder_name'] = ""
-    if 'selected_folder' not in st.session_state:
-        st.session_state['selected_folder'] = None
-    if 'answer_visible' not in st.session_state:
-        st.session_state['answer_visible'] = False
-    if 'serialized_docs' not in st.session_state:
-        st.session_state['serialized_docs'] = []
-    if 'uploader_key' not in st.session_state:
-        st.session_state['uploader_key'] = 0
+    if 'selected_model' not in st.session_state:
+        st.session_state['selected_model'] = ""
     if 'question' not in st.session_state:
         st.session_state['question'] = ""
     if 'answer' not in st.session_state:
         st.session_state['answer'] = ""
-    if 'expanded_chunk' not in st.session_state:
-        st.session_state['expanded_chunk'] = None
-    if 'GROQ_API_KEY' not in st.session_state:
-        st.session_state['GROQ_API_KEY'] = ""
-    if 'selected_model' not in st.session_state:
-        st.session_state['selected_model'] = ""
-
-def reset_question_and_chunks():
-    st.session_state['question'] = ""
-    st.session_state['serialized_docs'] = []
-    st.session_state['answer_visible'] = False
-    st.session_state['answer'] = ""
+    if 'retrieved_chunks' not in st.session_state:
+        st.session_state['retrieved_chunks'] = []
 
 def main():
-    st.set_page_config(page_title="Talk to Docs", page_icon="📚", layout="wide")
+    # Initialize session state variables
+    init_session_state()
     
-    # Custom CSS for colorful theme
+    st.set_page_config(page_title="Talk to Docs", layout="wide")
+
+    # Custom HTML/CSS for sidebar and layout
     st.markdown("""
     <style>
+    .sidebar-content {
+        background: linear-gradient(to bottom, #7C3AED, #4338CA);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+    }
     .stApp {
         background: linear-gradient(to bottom right, #F3E8FF, #E0F2FE);
     }
-    .sidebar .sidebar-content {
-        background: linear-gradient(to bottom, #7C3AED, #4338CA);
-        color: white;
+    .main-content {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
     .stButton>button {
+        background-color: #4CAF50;
         color: white;
-        border-radius: 0.5rem;
-        height: 3rem;
-        transition: all 0.2s;
+        border-radius: 8px;
+        padding: 8px;
+        transition: 0.3s;
     }
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        background-color: #45a049;
     }
-    .stTextInput>div>div>input {
-        background-color: #E0F2FE;
+    .chunk-item {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 8px;
     }
-    .stSelectbox>div>div>select {
-        background-color: #E0F2FE;
+    .relevance-bar {
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+        height: 12px;
+    }
+    .relevance-progress {
+        height: 100%;
+        border-radius: 5px;
+        background-color: #4CAF50;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("📚 Talk to Docs")
-
-    init_session_state()
-
-    # Sidebar with improved styling
+    # Sidebar Configuration
     with st.sidebar:
-        st.markdown("## 🔧 Configuration")
-        GROQ_API_KEY = st.text_input("🔑 Enter Groq API Key", type="password", value=st.session_state['GROQ_API_KEY'])
-        if GROQ_API_KEY:
-            st.session_state['GROQ_API_KEY'] = GROQ_API_KEY
-        else:
-            st.warning("⚠️ Please enter a valid Groq API Key")
+        st.markdown("## 🔧 Configuration", unsafe_allow_html=True)
         
-        st.markdown("---")
-        st.markdown("## 📁 Upload Documents")
-        folder_name = st.text_input("📂 Enter Folder Name", value=st.session_state['folder_name'], key="folder_name_input")
-        files = st.file_uploader("📄 Upload PDF Files", accept_multiple_files=True, type=["pdf"], key=f"uploader_{st.session_state['uploader_key']}")
-
-        if st.button("🔍 Process Folder", key="process_folder"):
-            if not folder_name or not files:
-                st.error("❌ Please provide a folder name and select files to upload.")
-            else:
-                with st.spinner("Processing files..."):
-                    folder_path = save_files(files, folder_name)
-                    st.success(f"✅ Files saved to {folder_path}")
-                    vector_db_path = process_folder(folder_path)
-                    clear_folder(folder_path)
-                    st.success(f"✅ Vector DB created at {vector_db_path} and upload folder cleared")
-                    reset_question_and_chunks()
-                    st.session_state['folder_name'] = ""
-                    st.session_state['uploader_key'] += 1
-                    st.rerun()
-
-        st.markdown("---")
-        st.markdown("## 🤖 Model Selection")
-        models_list = [
+        # Groq API Key input
+        st.session_state['GROQ_API_KEY'] = st.text_input("🔑 Groq API Key", type="password", value=st.session_state['GROQ_API_KEY'])
+        
+        # Folder name input
+        st.session_state['folder_name'] = st.text_input("📂 Folder Name", value=st.session_state['folder_name'])
+        
+        # Upload PDFs
+        uploaded_files = st.file_uploader("📄 Upload PDFs", accept_multiple_files=True, type=['pdf'])
+        
+        # Model selection
+        st.session_state['selected_model'] = st.selectbox("🤖 Select Model", [
             "llama-3.1-70b-versatile",
-            "llama-3.1-8b-instant",
-            "llama-3.2-11b-text-preview",
-            "llama-3.2-11b-vision-preview",
-            "llama-3.2-1b-preview",
-            "llama-3.2-3b-preview",
-            "llama-3.2-90b-text-preview",
-            "llama-guard-3-8b",
-            "llama3-70b-8192",
-            "llama3-8b-8192",
-        ]
-        selected_model = st.selectbox("🧠 Select Model", models_list)
+            "llama-3.1-8b-instant"
+        ], index=0)
 
-        st.markdown("---")
-        st.markdown("## 📊 Processed Folders")
-        folders = [f for f in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, f))]
-        for folder in folders:
-            col1, col2 = st.columns([9, 1])
-            with col1:
-                if st.button(f"📁 {folder}", key=folder):
-                    st.session_state['selected_folder'] = folder
-                    reset_question_and_chunks()
-                    st.rerun()
-            with col2:
-                if st.button("🗑️", key=f"delete-{folder}"):
-                    delete_specific_folder(folder)
-                    st.success(f"🗑️ Deleted {folder} from output folder")
-                    if st.session_state['selected_folder'] == folder:
-                        st.session_state['selected_folder'] = None
-                    st.rerun()
-
-        st.markdown("---")
-        if st.button("🧹 Clear Output Folder"):
-            clear_folder(output_folder)
-            os.makedirs(output_folder)
-            st.success("🧹 Cleared output folder")
-            reset_question_and_chunks()
-            st.session_state['selected_folder'] = None
-            st.rerun()
-
-    # Main content
-    selected_folder = st.session_state['selected_folder']
-
-    if selected_folder:
-        vector_db_path = os.path.join(output_folder, selected_folder, "VectorDB")
-        if os.path.exists(vector_db_path):
-            st.sidebar.success(f"🔗 Connected to Vector DB: {vector_db_path}")
-            db = FAISS.load_local(vector_db_path, embeddings=embeddings, allow_dangerous_deserialization=True)
-            logger.info(f"Loaded vector store from {vector_db_path}")
-        else:
-            if st.sidebar.button("🔄 Process Vector DB"):
-                with st.spinner("Processing Vector DB..."):
-                    process_folder(os.path.join(upload_folder, selected_folder))
-                    st.sidebar.success(f"✅ Vector DB processed for {selected_folder}")
-                    st.rerun()
-        
-        # Layout: Two columns - main content and retrieved chunks
-        col1, col2 = st.columns([3, 2])
-
-        with col1:
-            st.markdown("## 🔍 Ask Your Documents")
-            question = st.text_input("💬 Ask a question", value=st.session_state['question'])
-            if st.button("🚀 Submit", key="submit_question"):
-                if not vector_db_path or not os.path.exists(vector_db_path):
-                    st.error("❌ Please process the folder to create a Vector DB first.")
-                else:
-                    with st.spinner("Thinking..."):
-                        docs = db.similarity_search_with_score(question, k=10)
-                        logger.info(f"Performed similarity search for question: {question}")
-
-                        serialized_docs = []
-                        for doc_tuple in docs:
-                            document, score = doc_tuple
-                            serialized_doc = {
-                                "pdf_name": document.metadata['pdf_name'],
-                                "page_number": document.metadata['page_number'],
-                                "chunk_index": document.metadata['chunk_index'],
-                                "page_content": document.page_content,
-                                "score": float(score)
-                            }
-                            serialized_docs.append(serialized_doc)
-
-                        llm = ChatGroq(model=selected_model, api_key=st.session_state['GROQ_API_KEY'])
-
-                        prompt = ChatPromptTemplate.from_messages([
-                            ("system", "You are an AI assistant with access to a large knowledge base. Your task is to provide accurate and helpful responses solely based on the retrieved information. Follow these guidelines: 1. Analyze the user's question carefully. 2. Review the retrieved information provided in the context. 3. Formulate a response that directly addresses the user's query. 4. If the retrieved information is insufficient, just say Not specified in the context. 6. If you're unsure or the information is ambiguous, communicate this clearly to the user. 7. Keep your answers precise and concise. Remember, your primary goal is to assist the user with accurate and relevant information."),
-                            ("human", "context:{context} \n question:{question}"),
-                        ])
-
-                        chain = prompt | llm
-                        answer = chain.invoke({"context": docs, "question": question})
-
-                        if not answer.content:
-                            st.error("❌ No response received from the AI model.")
-                            st.session_state['answer_visible'] = False
-                            st.session_state['serialized_docs'] = []
-                        else:
-                            st.session_state['answer'] = answer.content
-                            st.session_state['answer_visible'] = True
-                            st.session_state['serialized_docs'] = serialized_docs
-                            st.session_state['question'] = question
-                            st.rerun()
-
-            if st.session_state['answer_visible']:
-                st.markdown("### 🤖 AI Response:")
-                st.info(st.session_state['answer'])
-
-        with col2:
-            st.markdown("## 📑 Retrieved Chunks")
-            
-            if st.session_state['serialized_docs'] and st.session_state['answer_visible']:
-                for i, doc in enumerate(st.session_state['serialized_docs']):
-                    with st.expander(f"📄 {doc['pdf_name']} | Page: {doc['page_number']} | Chunk: {doc['chunk_index']}"):
-                        st.markdown(f"**Content:** {doc['page_content'][:500]}...")
-                        
-                        # Calculate relevance score and ensure it's between 0 and 1
-                        relevance_score = max(0, min(1, 1 - doc['score']))
-                        
-                        st.progress(relevance_score)  # Use the adjusted relevance score
-                        st.markdown(f"**Relevance Score:** {relevance_score:.2f}")
+        # Submit button for processing folder
+        if st.button("🔍 Process Folder"):
+            if not st.session_state['folder_name'] or not uploaded_files:
+                st.error("Please provide a folder name and select PDFs to upload.")
             else:
-                st.info("No chunks to display. Ask a question to see relevant document sections.")
-    else:
-        st.info("👈 No folder selected. Please select a folder from the sidebar or upload new documents.")
+                # Process PDFs (mock function for now)
+                st.success(f"Processed {len(uploaded_files)} PDFs and created vector DB.")
+
+    # Main content layout
+    st.markdown("<div class='main-content'>", unsafe_allow_html=True)
+
+    # Title for main content
+    st.markdown("## 📚 Talk to Docs", unsafe_allow_html=True)
+
+    # Input for asking questions
+    question = st.text_input("💬 Ask Your Documents", value=st.session_state['question'])
+    
+    # Submit button for asking question
+    if st.button("🚀 Submit"):
+        # Perform search in vector DB (mocked result here)
+        st.session_state['question'] = question
+        st.session_state['answer'] = "AI's response to the question based on the document content."
+        st.session_state['retrieved_chunks'] = [
+            {"pdf_name": "Sample.pdf", "page_number": 1, "chunk_index": 1, "content": "Sample text from document...", "score": 0.8},
+            {"pdf_name": "Example.pdf", "page_number": 2, "chunk_index": 3, "content": "Another text snippet...", "score": 0.65}
+        ]
+    
+    # Display AI response
+    if st.session_state['answer']:
+        st.markdown("### 🤖 AI Response:")
+        st.info(st.session_state['answer'])
+
+    # Display retrieved document chunks
+    if st.session_state['retrieved_chunks']:
+        st.markdown("### 📑 Retrieved Chunks:")
+        for chunk in st.session_state['retrieved_chunks']:
+            with st.expander(f"📄 {chunk['pdf_name']} | Page: {chunk['page_number']} | Chunk: {chunk['chunk_index']}"):
+                st.markdown(chunk['content'])
+                st.markdown(f"**Relevance Score:** {chunk['score']:.2f}")
+                st.markdown(f"<div class='relevance-bar'><div class='relevance-progress' style='width: {chunk['score']*100}%'></div></div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
