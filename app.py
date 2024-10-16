@@ -9,12 +9,6 @@ from langchain_core.documents import Document
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 import logging
-import fitz
-import pdfplumber
-from PIL import Image
-import io
-import csv
-import json
 
 # Initialize global variables
 embeddings = HuggingFaceEmbeddings(model_name='all-mpnet-base-v2')
@@ -118,7 +112,37 @@ def reset_question_and_chunks():
     st.session_state['answer'] = ""
 
 def main():
-    st.set_page_config(page_title="Talk to Docs", page_icon=":books:", layout="wide")
+    st.set_page_config(page_title="Talk to Docs", page_icon="📚", layout="wide")
+    
+    # Custom CSS for colorful theme
+    st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(to bottom right, #F3E8FF, #E0F2FE);
+    }
+    .sidebar .sidebar-content {
+        background: linear-gradient(to bottom, #7C3AED, #4338CA);
+        color: white;
+    }
+    .stButton>button {
+        color: white;
+        border-radius: 0.5rem;
+        height: 3rem;
+        transition: all 0.2s;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+    .stTextInput>div>div>input {
+        background-color: #E0F2FE;
+    }
+    .stSelectbox>div>div>select {
+        background-color: #E0F2FE;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.title("📚 Talk to Docs")
 
     init_session_state()
