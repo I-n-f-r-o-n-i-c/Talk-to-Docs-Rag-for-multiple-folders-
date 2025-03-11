@@ -9,4 +9,3 @@ pillow
 langchain-groq
 faiss-cpu
 sentence-transformers
-torch
